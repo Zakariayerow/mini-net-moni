@@ -1,0 +1,16 @@
+[Unit]
+Description=MiniMon SNMP Poller (device & port status)
+After=network.target postgresql.service minimon-server.service
+
+[Service]
+Type=simple
+User=minimon
+WorkingDirectory=/opt/minimon/server
+Environment="MINIMON_DB_DSN=dbname=minimon user=minimon password=changeme host=localhost"
+Environment="MINIMON_SNMP_POLL_SECONDS=60"
+ExecStart=/opt/minimon/server/venv/bin/python snmp_poller.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

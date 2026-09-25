@@ -1,0 +1,4 @@
+# Copy to /etc/minimon/agent.yaml on each monitored host
+server_url: "http://YOUR_SERVER_IP:8000"
+api_key: "REPLACE_WITH_KEY_FROM_REGISTER_ENDPOINT"
+interval_seconds: 30

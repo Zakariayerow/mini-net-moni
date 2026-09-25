@@ -1,0 +1,18 @@
+[Unit]
+Description=MiniMon Monitoring Server
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=minimon
+WorkingDirectory=/opt/minimon/server
+Environment="MINIMON_DB_DSN=dbname=minimon user=minimon password=changeme host=localhost"
+Environment="MINIMON_ADMIN_KEY=changeme-admin-key"
+Environment="MINIMON_SMTP_HOST="
+Environment="MINIMON_ALERT_TO="
+ExecStart=/opt/minimon/server/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

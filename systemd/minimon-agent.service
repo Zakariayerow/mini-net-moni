@@ -1,0 +1,15 @@
+[Unit]
+Description=MiniMon Monitoring Agent
+After=network.target
+
+[Service]
+Type=simple
+User=minimon
+WorkingDirectory=/opt/minimon/agent
+Environment="MINIMON_AGENT_CONFIG=/etc/minimon/agent.yaml"
+ExecStart=/opt/minimon/agent/venv/bin/python agent.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

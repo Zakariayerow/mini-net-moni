@@ -1,0 +1,10 @@
+hostname,group_name
+main-web-server,production
+student-portal-app,production
+db-primary,production
+db-replica,production
+file-server-shared,infra
+dns-server-1,infra
+mail-server,infra
+elearning-moodle,academic
+library-opac-server,academic

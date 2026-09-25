@@ -1,0 +1,10 @@
+name,ip_address,snmp_community,device_type,group_name
+core-switch-main-building,10.10.0.1,minimonRO,switch,core
+router-internet-edge,10.10.0.254,minimonRO,router,edge
+firewall-perimeter,10.10.0.253,minimonRO,firewall,edge
+switch-library-1f,10.10.1.10,minimonRO,switch,library
+switch-library-2f,10.10.1.11,minimonRO,switch,library
+switch-admin-block,10.10.2.10,minimonRO,switch,admin
+switch-hostel-block-a,10.10.3.10,minimonRO,switch,hostel
+switch-lab-cs-dept,10.10.4.10,minimonRO,switch,cs-dept
+wifi-controller,10.10.0.20,minimonRO,other,wireless

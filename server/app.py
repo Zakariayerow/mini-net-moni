@@ -383,7 +383,7 @@ def register_host_via_session(request: Request, payload: dict):
     hostname = payload.get("hostname")
     if not hostname:
         raise HTTPException(status_code=400, detail="hostname is required")
-    group_name = payload.get("group_name", "default")
+    group_name = payload.get("group_name", "Ground Floor")
     import secrets
     api_key = secrets.token_hex(20)
     conn = db()
@@ -421,7 +421,7 @@ def register_device_via_session(request: Request, payload: dict):
                     payload.get("snmp_community", "public"),
                     payload.get("snmp_version", "2c"),
                     payload.get("device_type", "switch"),
-                    payload.get("group_name", "network"),
+                    payload.get("group_name", "Ground Floor"),
                 ),
             )
             conn.commit()
@@ -1009,7 +1009,7 @@ def dashboard(request: Request):
                         <tr>
                             <th>Host</th>
                             <th>Status</th>
-                            <th>Group</th>
+                            <th>Floor</th>
                             <th>Last Seen</th>
                             <th>CPU %</th>
                             <th>Mem %</th>
@@ -1130,8 +1130,8 @@ def dashboard(request: Request):
                     <label for="hostname">Hostname</label>
                     <input id="hostname" name="hostname" type="text" required />
 
-                    <label for="group_name">Group</label>
-                    <input id="group_name" name="group_name" type="text" value="default" />
+                    <label for="group_name">Floor</label>
+                    <input id="group_name" name="group_name" type="text" value="Ground Floor" />
 
                     <button type="submit">Register Host</button>
                 </form>
@@ -1161,8 +1161,8 @@ def dashboard(request: Request):
                     <label for="deviceType">Device Type</label>
                     <input id="deviceType" name="device_type" type="text" required />
 
-                    <label for="deviceGroup">Group</label>
-                    <input id="deviceGroup" name="group_name" type="text" value="default" />
+                    <label for="deviceGroup">Floor</label>
+                    <input id="deviceGroup" name="group_name" type="text" value="Ground Floor" />
 
                     <button type="submit">Register Device</button>
                 </form>
@@ -1262,7 +1262,7 @@ def dashboard(request: Request):
                 const [hosts, devices, alerts] = await Promise.all([
                     fetch('/api/hosts').then(r => r.json()),
                     fetch('/api/devices').then(r => r.json()),
-                    fetch('/api/alerts').then r => r.json())
+                    fetch('/api/alerts').then(r => r.json())
                 ]);
 
                 const sortedDevices = [...devices].sort((a, b) => {
@@ -1274,76 +1274,14 @@ def dashboard(request: Request):
                     <tr>
                         <td>${h.hostname}</td>
                         <td>${badge(h.status || 'unknown')}</td>
-                        <td>${h.group_name || 'default'}</td>
-                        <td>${h.last_seen ?? 'never'}</td>
-                        <td class="${cls(h.cpu_percent || 0)}">${(h.cpu_percent ?? 0).toFixed(1)}</td>
-                        <td class="${cls(h.mem_percent || 0)}">${(h.mem_percent ?? 0).toFixed(1)}</td>
-                        <td class="${cls(h.disk_percent || 0)}">${(h.disk_percent ?? 0).toFixed(1)}</td>
+                        <td>${h.group_name || 'Ground Floor'}</td>
+                        <td>${new Date(h.last_seen).toLocaleString()}</td>
+                        <td>${(h.cpu_percent ?? 0).toFixed(1)}</td>
+                        <td>${(h.mem_percent ?? 0).toFixed(1)}</td>
+                        <td>${(h.disk_percent ?? 0).toFixed(1)}</td>
                     </tr>
-                `).join('') : '<tr><td colspan="7" class="empty">No servers registered yet</td></tr>';
-
-                const deviceCards = sortedDevices.length ? sortedDevices.map(renderDevice).join('') : '<div class="empty">No network devices registered yet</div>';
-                document.querySelector('#devices').innerHTML = deviceCards;
-
-                const upPorts = sortedDevices.reduce((sum, d) => sum + (Array.isArray(d.interfaces) ? d.interfaces.filter(p => (p.oper_status || 'unknown') === 'up').length : 0), 0);
-                const downPorts = sortedDevices.reduce((sum, d) => sum + (Array.isArray(d.interfaces) ? d.interfaces.filter(p => (p.oper_status || 'unknown') === 'down').length : 0), 0);
-
-                document.querySelector('#hostCount').textContent = hosts.length;
-                document.querySelector('#deviceCount').textContent = sortedDevices.length;
-                document.querySelector('#portsUp').textContent = upPorts;
-                document.querySelector('#portsDown').textContent = downPorts;
-
-                document.querySelector('#alerts tbody').innerHTML = alerts.length ? alerts.map(a => `
-                    <tr>
-                        <td>${a.triggered_at}</td>
-                        <td>${a.hostname}</td>
-                        <td>${a.metric}</td>
-                        <td>${a.value ?? 'n/a'}</td>
-                        <td><span class="status ${statusClass(a.severity === 'critical' ? 'down' : a.severity === 'high' ? 'down' : 'unknown')}">${a.severity || 'unknown'}</span></td>
-                        <td>${a.message ?? ''}</td>
-                    </tr>
-                `).join('') : '<tr><td colspan="6" class="empty">No alerts</td></tr>';
-
-                // Update live visualization
-                const cpuRows = hosts.slice(0, 5).map(h => ({ name: h.hostname, value: Number(h.cpu_percent || 0) }));
-                const memRows = hosts.slice(0, 5).map(h => ({ name: h.hostname, value: Number(h.mem_percent || 0) }));
-                const diskRows = hosts.slice(0, 5).map(h => ({ name: h.hostname, value: Number(h.disk_percent || 0) }));
-                const deviceRows = sortedDevices.slice(0, 5).map(d => ({ name: d.name, value: d.status === 'up' ? 100 : d.status === 'down' ? 0 : 50 }));
-
-                renderMetricBars('cpuUsage', cpuRows, 'background: linear-gradient(90deg, #34d399, #fbbf24, #f87171);');
-                renderMetricBars('memoryUsage', memRows, 'background: linear-gradient(90deg, #60a5fa, #34d399);');
-                renderMetricBars('diskUsage', diskRows, 'background: linear-gradient(90deg, #a78bfa, #fbbf24);');
-                renderMetricBars('deviceStatus', deviceRows, 'background: linear-gradient(90deg, #22c55e, #ef4444);');
-
-                const totalUp = sortedDevices.filter(d => (d.status || 'unknown') === 'up').length;
-                const totalDown = sortedDevices.filter(d => (d.status || 'unknown') === 'down').length;
-                const totalUnknown = Math.max(0, sortedDevices.length - totalUp - totalDown);
-                renderDeviceHealthBox('deviceHealth', totalUp, totalDown, totalUnknown, sortedDevices.length || 1);
-
-                const firstHosts = hosts.slice(0, 5);
-                document.getElementById('utilBars').innerHTML = firstHosts.length ? firstHosts.map(h => `
-                    <div>
-                        <div class="metric-row">
-                            <span>${(h.hostname || 'host').slice(0, 12)}</span>
-                            <div class="progress"><span style="width:${Math.min(100, Number(h.cpu_percent || 0))}%"></span></div>
-                            <strong>${Number(h.cpu_percent || 0).toFixed(0)}%</strong>
-                        </div>
-                        <div class="metric-row">
-                            <span>Mem</span>
-                            <div class="progress"><span style="width:${Math.min(100, Number(h.mem_percent || 0))}%; background: linear-gradient(90deg, #60a5fa, #34d399)"></span></div>
-                            <strong>${Number(h.mem_percent || 0).toFixed(0)}%</strong>
-                        </div>
-                        <div class="metric-row">
-                            <span>Disk</span>
-                            <div class="progress"><span style="width:${Math.min(100, Number(h.disk_percent || 0))}%; background: linear-gradient(90deg, #a78bfa, #fbbf24)"></span></div>
-                            <strong>${Number(h.disk_percent || 0).toFixed(0)}%</strong>
-                        </div>
-                    </div>
-                `).join('') : '<div class="empty">No host data yet</div>';
-            } catch (e) {
-                console.error(e);
-                document.querySelector('#devices').innerHTML = '<div class="empty">Unable to load devices</div>';
-            }
+                `).join('') : `<tr><td colspan="7">No hosts yet</td></tr>`}
+            `;
         }
 
         document.getElementById('registerHostForm').onsubmit = async function(e) {
